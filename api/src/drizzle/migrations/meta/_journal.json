@@ -8,6 +8,13 @@
       "when": 1720443750215,
       "tag": "0000_sweet_network",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1720600211943,
+      "tag": "0001_abandoned_prowler",
+      "breakpoints": true
     }
   ]
 }

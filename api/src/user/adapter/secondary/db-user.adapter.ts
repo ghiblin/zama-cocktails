@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../../../drizzle/schema';
 import { PG_CONNECTION } from '../../../drizzle/constants';
@@ -10,6 +10,8 @@ import { IUserAdapter } from '../../repositories/user.repository';
 
 @Injectable()
 export class DbUserAdapter implements IUserAdapter {
+  #logger = new Logger(DbUserAdapter.name);
+
   constructor(
     @Inject(PG_CONNECTION) private readonly conn: NodePgDatabase<typeof schema>,
   ) {}
@@ -19,6 +21,10 @@ export class DbUserAdapter implements IUserAdapter {
     name,
     picture,
   }: CreateUserProps): Promise<Result<UserProps>> {
+    this.#logger.verbose(
+      `createUser: email=${email}, name=${name}, picture=${picture}`,
+    );
+
     try {
       const rows = await this.conn
         .insert(schema.users)
@@ -36,8 +42,6 @@ export class DbUserAdapter implements IUserAdapter {
           },
         });
 
-      console.debug(`rows: ${JSON.stringify(rows)}`);
-
       if (rows.length) {
         return new Result(
           {
@@ -50,12 +54,14 @@ export class DbUserAdapter implements IUserAdapter {
         );
       }
     } catch (error) {
-      console.error(`Failed to create user: ${error}`);
+      this.#logger.warn(`Failed to create user: ${error}`);
     }
     return new Result<UserProps>(null, new Error('Failed to create user'));
   }
 
   async findUserByEmail(email: string): Promise<Result<UserProps>> {
+    this.#logger.verbose(`findUserByEmail: ${email}`);
+
     try {
       const user = await this.conn.query.users.findFirst({
         where: eq(schema.users.email, email),
@@ -68,6 +74,7 @@ export class DbUserAdapter implements IUserAdapter {
       }
       return new Result(user, null);
     } catch (error) {
+      this.#logger.warn(`Failed to query user by email: ${error}`);
       return new Result<UserProps>(
         null,
         new Error(`Failed to query user by email ${email}`),
@@ -76,6 +83,7 @@ export class DbUserAdapter implements IUserAdapter {
   }
 
   async findUserById(id: string): Promise<Result<UserProps>> {
+    this.#logger.verbose(`findUserById: ${id}`);
     try {
       const user = await this.conn.query.users.findFirst({
         where: eq(schema.users.id, id),
@@ -85,6 +93,7 @@ export class DbUserAdapter implements IUserAdapter {
       }
       return new Result(user, null);
     } catch (error) {
+      this.#logger.warn(`Failed to query user by id: ${error}`);
       return new Result<UserProps>(
         null,
         new Error(`Failed to query user by id ${id}`),

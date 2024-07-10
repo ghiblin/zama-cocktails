@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import axios, { isAxiosError } from 'axios';
 import { CreateUserProps } from '../../../user/domain/user.entity';
 import { Result } from '../../../utils/result';
@@ -16,6 +16,8 @@ type UserInfo = {
 
 @Injectable()
 export class AxiosGoogleAdapter implements IGoogleAdapter {
+  #logger = new Logger(AxiosGoogleAdapter.name);
+
   async getUserProfile(accessToken: string): Promise<Result<CreateUserProps>> {
     try {
       const response = await axios.get<UserInfo>(
@@ -28,11 +30,12 @@ export class AxiosGoogleAdapter implements IGoogleAdapter {
       );
       if (response.data) {
         const { email, name, picture } = response.data;
+        this.#logger.debug(`retrieved email:${email}`);
         return new Result({ email, name, picture }, null);
       }
     } catch (error) {
       if (isAxiosError(error)) {
-        console.error(error.message);
+        this.#logger.warn(error.message);
       }
     }
     return new Result<CreateUserProps>(

@@ -15,8 +15,10 @@
   "license": "ISC",
   "dependencies": {
     "async-listen": "^3.0.1",
+    "axios": "^1.7.2",
     "commander": "^12.1.0",
     "dotenv": "^16.4.5",
+    "jwt-decode": "^4.0.0",
     "ora": "^8.0.1",
     "picocolors": "^1.0.1"
   },

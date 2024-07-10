@@ -3,8 +3,8 @@
 import "dotenv/config";
 
 import { listen } from "async-listen";
-import { Command } from "commander";
-import { readFileSync, writeFileSync } from "fs";
+import { Argument, Command } from "commander";
+import { existsSync, readFileSync, writeFileSync } from "fs";
 import http from "http";
 import os from "os";
 import path from "path";
@@ -12,6 +12,8 @@ import pc from "picocolors";
 import url from "url";
 import { ParsedUrlQuery } from "querystring";
 import { spawn } from "child_process";
+import { jwtDecode } from "jwt-decode";
+import axios, { isAxiosError } from "axios";
 
 const FILENAME = ".zama-cocktails";
 
@@ -22,13 +24,48 @@ class UserCancellationError extends Error {
   }
 }
 
+function getConfigFilePath() {
+  const homeDir = os.homedir();
+  return path.join(homeDir, FILENAME);
+}
+
 function writeToConfigFile(data: ParsedUrlQuery) {
   try {
-    const homeDir = os.homedir();
-    const filePath = path.join(homeDir, FILENAME);
-    writeFileSync(filePath, JSON.stringify(data));
+    writeFileSync(getConfigFilePath(), JSON.stringify(data));
   } catch (error) {
     console.error("Error writing to local config file.", error);
+  }
+}
+
+function readJwtFromConfigFile(): string | undefined {
+  try {
+    const filePath = getConfigFilePath();
+    if (!existsSync(filePath)) {
+      console.error("Error: you need to login before proceed");
+      process.exit(1);
+    }
+    const content = readFileSync(filePath, {
+      encoding: "utf-8",
+      flag: "r",
+    });
+    const { jwt } = JSON.parse(content);
+    if (!jwt) {
+      console.error("Error: you need to login before proceed");
+      process.exit(1);
+    }
+    const { exp } = jwtDecode(jwt);
+    const currentTime = new Date().getTime() / 1000;
+
+    if (currentTime > (exp ?? 0)) {
+      console.error("Error: authentication expired, please login again");
+      process.exit(1);
+    }
+    return jwt;
+  } catch (error) {
+    console.error(
+      "Error reading the local config file.",
+      (error as Error).name
+    );
   }
 }
 
@@ -149,6 +186,37 @@ program
         process.exit(1);
       }
     }
+  });
+
+program
+  .command("gen-key")
+  .description("Generate a new API key")
+  .addArgument(
+    new Argument("<type>", "type of the API key to be generated").choices([
+      "read",
+      "write",
+    ])
+  )
+  .action(async (type) => {
+    console.log(`gen-key: ${type}`);
+    const jdk = readJwtFromConfigFile();
+    try {
+      const response = await axios.post<{ key: string }>(
+        `${process.env.API_URL}/api-keys`,
+        {
+          type,
+        },
+        { headers: { Authorization: `Bearer ${jdk}` } }
+      );
+      if (response.data.key) {
+        console.log(`${type} API key generated: ${response.data.key}`);
+      }
+    } catch (error) {
+      if (isAxiosError(error)) {
+        console.error(`Failed to create API key: ${error.message}`);
+      }
+    }
+    process.exit(0);
   });
 
 program.parse();

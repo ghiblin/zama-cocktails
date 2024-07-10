@@ -9,15 +9,16 @@ import {
   GoogleRepository,
 } from './repositories/google.repository';
 import { ConfigService } from '@nestjs/config';
+import { AuthGuard } from './guards/auth.guard';
 
 @Module({
   imports: [
     UserModule,
     JwtModule.registerAsync({
       inject: [ConfigService],
+      global: true,
       useFactory: function (config: ConfigService) {
         return {
-          global: true,
           secret: config.get<string>('jwt.secret'),
           signOptions: {
             expiresIn: config.get<string>('jwt.expiresIn') ?? '1h',
@@ -33,7 +34,9 @@ import { ConfigService } from '@nestjs/config';
       provide: GOOGLE_ADAPTER,
       useClass: AxiosGoogleAdapter,
     },
+    AuthGuard,
   ],
   controllers: [AuthController],
+  exports: [AuthGuard],
 })
 export class AuthModule {}
