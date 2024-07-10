@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   postgres:
     image: postgres:16-alpine
@@ -11,3 +9,28 @@ services:
       - POSTGRES_PASSWORD=password
       - POSTGRES_USER=postgres
       - POSTGRES_DB=cocktail
+
+  api:
+    build:
+      context: ./api
+      dockerfile: dockerfile
+    ports:
+      - 3000:3000
+    env_file:
+      - path: ./.env.api
+        required: true
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ./web
+      dockerfile: dockerfile
+    ports:
+      - 8080:8080
+    # environment:
+    #   - ENV VITE_GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+    #   - ENV VITE_API_URL=localhost:3000
+    env_file:
+      - path: ./.env.web
+        required: true
+    restart: unless-stopped

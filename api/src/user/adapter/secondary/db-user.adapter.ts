@@ -26,6 +26,22 @@ export class DbUserAdapter implements IUserAdapter {
     );
 
     try {
+      const query = this.conn
+        .insert(schema.users)
+        .values({
+          email,
+          name: name ?? null,
+          picture: picture ?? null,
+        })
+        .returning({ id: schema.users.id })
+        .onConflictDoUpdate({
+          target: schema.users.email,
+          set: {
+            name: sql.raw(`excluded.${schema.users.name.name}`),
+            picture: sql.raw(`excluded.${schema.users.picture.name}`),
+          },
+        })
+        .toSQL();
       const rows = await this.conn
         .insert(schema.users)
         .values({

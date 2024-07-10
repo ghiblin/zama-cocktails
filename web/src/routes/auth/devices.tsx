@@ -19,7 +19,10 @@ export default function AuthDevices() {
       try {
         // Notify the CLI server about the completed authentication
         const url = new URL(searchParams.get("redirect")!);
-        url.searchParams.append("jwt", resp.data.token);
+        if (resp.data.token) {
+          // append jwt token
+          url.searchParams.append("jwt", resp.data.token);
+        }
         await fetch(url.toString());
       } catch (error) {
         console.error(`something went wrong: ${error}`);

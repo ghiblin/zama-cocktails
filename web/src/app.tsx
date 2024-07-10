@@ -3,6 +3,7 @@ import { GoogleOAuthProvider } from "@react-oauth/google";
 import ErrorPage from "./error-page";
 import Root from "./routes/root";
 import AuthDevices from "./routes/auth/devices";
+import Home from "./routes/home";
 
 const router = createBrowserRouter([
   {
@@ -10,6 +11,10 @@ const router = createBrowserRouter([
     element: <Root />,
     errorElement: <ErrorPage />,
     children: [
+      {
+        path: "/",
+        element: <Home />,
+      },
       {
         path: "auth/devices",
         element: <AuthDevices />,

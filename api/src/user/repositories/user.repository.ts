@@ -13,9 +13,7 @@ export interface IUserAdapter {
 export class UserRepository {
   #logger = new Logger(UserRepository.name);
 
-  constructor(@Inject(USER_ADAPTER) private readonly adapter: IUserAdapter) {
-    this.#logger.debug(`new instance: ${this.adapter}`);
-  }
+  constructor(@Inject(USER_ADAPTER) private readonly adapter: IUserAdapter) {}
 
   async createUser(dto: CreateUserProps): Promise<Result<User>> {
     const result = await this.adapter.createUser(dto);
