@@ -1,5 +1,5 @@
 import { api } from "@/api";
-import { User } from "@/entities/user";
+import { ApiKey } from "@/entities/api-key";
 import { match } from "@/utils/either";
 import {
   ReactNode,
@@ -13,9 +13,9 @@ const AUTH_ITEM = "__auth__";
 
 type NullState = { _tag: "Null"; fetching: boolean };
 type ErrorState = { _tag: "Error"; message: string };
-type UserState = { _tag: "User"; user: User };
+type ValidKeyState = { _tag: "ValidKey"; key: ApiKey };
 
-export type AuthState = NullState | ErrorState | UserState;
+export type AuthState = NullState | ErrorState | ValidKeyState;
 
 export type Auth = {
   state: AuthState;
@@ -31,7 +31,7 @@ export const AuthContext = createContext<Auth>({
 
 type Reset = { type: "Reset" };
 type FetchKey = { type: "FetchKey" };
-type KeyFetched = { type: "KeyFetched"; payload: User };
+type KeyFetched = { type: "KeyFetched"; payload: ApiKey };
 type KeyFailed = { type: "KeyFailed"; payload: string };
 type AuthAction = Reset | FetchKey | KeyFetched | KeyFailed;
 
@@ -44,35 +44,49 @@ function reducer(state: AuthState, action: AuthAction): AuthState {
     case "KeyFailed":
       return { _tag: "Error", message: action.payload };
     case "KeyFetched":
-      return { _tag: "User", user: action.payload };
+      return { _tag: "ValidKey", key: action.payload };
     default:
       return state;
   }
 }
 
-export const AuuthProvider = ({ children }: { children: ReactNode }) => {
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [state, dispatch] = useReducer(reducer, InitialState);
 
   useEffect(() => {
-    match<string, User, void>({
-      onLeft: (msg) => {
-        console.log(`invalid key: ${msg}`);
-        dispatch({ type: "Reset" });
-      },
-      onRight: (user) => dispatch({ type: "KeyFetched", payload: user }),
-    })(User.parse(localStorage.getItem(AUTH_ITEM)));
+    try {
+      const item = localStorage.getItem(AUTH_ITEM);
+      if (item !== null) {
+        match<string, ApiKey, void>({
+          onLeft: (msg) => {
+            console.log(`invalid key: ${msg}`);
+            dispatch({ type: "Reset" });
+          },
+          onRight: (key) => dispatch({ type: "KeyFetched", payload: key }),
+        })(ApiKey.parse(JSON.parse(item)));
+      }
+    } catch (e) {
+      console.log(`failed to restore api key: ${e}`);
+    }
   }, []);
+
+  useEffect(() => {
+    if (state._tag === "ValidKey") {
+      console.log(`storing api key into local storage`);
+      localStorage.setItem(AUTH_ITEM, JSON.stringify(state.key.toJSON()));
+    }
+  }, [state]);
 
   const checkKey = useCallback((key: string) => {
     async function fetchApi(key: string) {
       dispatch({ type: "FetchKey" });
       const resp = await api.fetchApiKey(key);
-      match<string, User, void>({
+      match<string, ApiKey, void>({
         onLeft: (msg) => {
           dispatch({ type: "KeyFailed", payload: msg });
         },
-        onRight: (user) => {
-          dispatch({ type: "KeyFetched", payload: user });
+        onRight: (key) => {
+          dispatch({ type: "KeyFetched", payload: key });
         },
       })(resp);
     }

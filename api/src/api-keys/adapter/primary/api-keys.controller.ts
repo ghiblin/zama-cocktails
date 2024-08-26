@@ -27,7 +27,6 @@ const createSchema = z.object({
 type CreateDto = z.infer<typeof createSchema>;
 
 @Controller('api-keys')
-@UseGuards(AuthGuard)
 export class ApiKeysController {
   constructor(
     private readonly createApiKeyUC: CreateApiKeyUseCase,
@@ -35,6 +34,7 @@ export class ApiKeysController {
   ) {}
 
   @Post()
+  @UseGuards(AuthGuard)
   @UsePipes(new ZodValidationPipe(createSchema))
   async createApyKey(@Body() { type }: CreateDto, @Req() req: Request) {
     const result = await this.createApiKeyUC.run(req['user']?.id, type);

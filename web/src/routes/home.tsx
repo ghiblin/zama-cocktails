@@ -1,3 +1,5 @@
+import { Auth } from "@/components/auth/auth";
+
 export default function Home() {
   return (
     <>
@@ -7,6 +9,7 @@ export default function Home() {
       <p className="text-lg italic text-center">
         A small demo project to test CLI authentication
       </p>
+      <Auth />
     </>
   );
 }
