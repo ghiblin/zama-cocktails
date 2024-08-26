@@ -27,9 +27,6 @@ services:
       dockerfile: dockerfile
     ports:
       - 8080:8080
-    # environment:
-    #   - ENV VITE_GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
-    #   - ENV VITE_API_URL=localhost:3000
     env_file:
       - path: ./.env.web
         required: true

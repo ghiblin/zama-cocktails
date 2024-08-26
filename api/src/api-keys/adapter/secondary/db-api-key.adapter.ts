@@ -7,6 +7,7 @@ import { IApiKeyAdapter } from '../../repositories/api-key.repository';
 import { Result } from '../../../utils/result';
 import { PG_CONNECTION } from '../../../drizzle/constants';
 import { eq } from 'drizzle-orm';
+import { NotFoundError } from 'src/utils/errors';
 
 export class DbApiKeyAdapter implements IApiKeyAdapter {
   #logger = new Logger(DbApiKeyAdapter.name);
@@ -64,7 +65,7 @@ export class DbApiKeyAdapter implements IApiKeyAdapter {
       this.#logger.warn(`Failed to query api key: ${error}`);
       return new Result<ApiKeyProps>(
         null,
-        new Error(`Failed to query api key by id`),
+        new NotFoundError(`Failed to query api key by id`),
       );
     }
   }
