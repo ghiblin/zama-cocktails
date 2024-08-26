@@ -13,6 +13,7 @@ import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { Loader2 } from "lucide-react";
 import { memo } from "react";
+import { cn } from "@/lib/utils";
 
 const schema = z.object({
   key: z.string().uuid(),
@@ -21,9 +22,10 @@ const schema = z.object({
 type Props = {
   loading: boolean;
   checkKey: (key: string) => void;
+  className?: string;
 };
 
-export const AuthForm = memo(({ loading, checkKey }: Props) => {
+export const AuthForm = memo(({ loading, checkKey, className }: Props) => {
   const form = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -37,7 +39,10 @@ export const AuthForm = memo(({ loading, checkKey }: Props) => {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      <form
+        onSubmit={form.handleSubmit(onSubmit)}
+        className={cn("space-y-8", className)}
+      >
         <FormField
           control={form.control}
           name="key"

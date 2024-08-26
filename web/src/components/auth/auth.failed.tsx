@@ -4,11 +4,15 @@ import { CircleXIcon } from "lucide-react";
 
 type AuthFailedProps = {
   message: string;
+  className?: string;
 };
 
-export const AuthFailed = memo(function ({ message }: AuthFailedProps) {
+export const AuthFailed = memo(function ({
+  message,
+  className,
+}: AuthFailedProps) {
   return (
-    <Alert variant="destructive">
+    <Alert variant="destructive" className={className}>
       <CircleXIcon className="h-4 w-4" />
       <AlertTitle>Invalid key</AlertTitle>
       <AlertDescription>{message}</AlertDescription>
