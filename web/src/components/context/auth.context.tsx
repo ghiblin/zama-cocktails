@@ -1,6 +1,6 @@
 import { api } from "@/api";
 import { ApiKey } from "@/entities/api-key";
-import { match } from "@/utils/either";
+import { Either, left, match } from "@/utils/either";
 import {
   ReactNode,
   createContext,
@@ -16,6 +16,19 @@ type ErrorState = { _tag: "Error"; message: string };
 type ValidKeyState = { _tag: "ValidKey"; key: ApiKey };
 
 export type AuthState = NullState | ErrorState | ValidKeyState;
+
+export function getApiKey(): Either<string, ApiKey> {
+  const item = localStorage.getItem(AUTH_ITEM);
+  try {
+    return item ? ApiKey.parse(JSON.parse(item)) : left("Unauthenticated");
+  } catch {
+    return left("Unauthenticated");
+  }
+}
+
+function storeApiKey(apiKey: ApiKey) {
+  localStorage.setItem(AUTH_ITEM, JSON.stringify(apiKey.toJSON()));
+}
 
 export type Auth = {
   state: AuthState;
@@ -73,7 +86,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (state._tag === "ValidKey") {
       console.log(`storing api key into local storage`);
-      localStorage.setItem(AUTH_ITEM, JSON.stringify(state.key.toJSON()));
+      storeApiKey(state.key);
     }
   }, [state]);
 

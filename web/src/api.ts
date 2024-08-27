@@ -1,7 +1,9 @@
 import type { AxiosInstance } from "axios";
 import axios from "axios";
-import { Either, left } from "./utils/either";
+import { Either, left, match } from "./utils/either";
 import { ApiKey } from "./entities/api-key";
+import { Cocktail, NewCocktailProps } from "./entities/cocktail";
+import { getApiKey } from "./components/context/auth.context";
 
 class API {
   #client: AxiosInstance;
@@ -17,6 +19,27 @@ class API {
         return left(`Failed to fetch key ${key}`);
       }
       return ApiKey.parse(resp.data);
+    } catch (e) {
+      return left(String(e));
+    }
+  }
+
+  async createCocktail(
+    props: NewCocktailProps
+  ): Promise<Either<string, Cocktail>> {
+    try {
+      const resp = await this.#client.post<unknown>(`/cocktails`, props, {
+        headers: {
+          Authorization: match<string, ApiKey, string>({
+            onLeft: () => "",
+            onRight: (key) => key.id,
+          })(getApiKey()),
+        },
+      });
+      if (resp.status !== 201) {
+        return left(`Failed to create cocktail`);
+      }
+      return Cocktail.parse(resp.data);
     } catch (e) {
       return left(String(e));
     }
